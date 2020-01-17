@@ -11,8 +11,7 @@ usage() {
 [ $# -eq 2 ] || { usage;  exit 1; }
 
 lddresult=`ldd $1`
-lddstatus=$?
-if [ $lddstatus -eq 0 ]; then
+if [ $? -eq 0 ]; then
 	gawk 'match ($0, /(\/.*\.so(\.[0-9]+)?)/, ary) {
 		  		path=ary[1]
 				n=split(path, pathvar, "/")
