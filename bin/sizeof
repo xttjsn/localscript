@@ -1,0 +1,29 @@
+#!/bin/bash
+
+usage() {
+	cat <<-EOF
+		sizeof <struct fullname>
+	EOF
+}
+
+[ $# -eq 1 ] || { usage; exit 1; }
+structname=$1
+
+_code() {
+	cat <<-EOF
+		#include<sys/un.h>
+		#include<stdio.h>
+
+		int main() {
+			printf("%ld\n", sizeof($structname));
+			return 0;
+		}
+	EOF
+}
+
+tmpsrc=`mktemp --tmpdir sizeofsrc.XXXXXXXX.c`
+tmpbin=`mktemp --tmpdir sizeofbin.XXXXXXXX`
+CC=gcc
+_code > $tmpsrc
+$CC $tmpsrc -o $tmpbin
+$tmpbin

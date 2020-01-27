@@ -1,0 +1,54 @@
+#!/bin/bash
+
+prog=$0
+
+usage() {
+	cat <<-EOF
+        aed - Add Executable Dependencies to rootfs
+		$prog <executable>
+	EOF
+}
+
+is_dynamic_executable() {
+	ldd $1 1>/dev/null 2>&1
+	return $?
+}
+
+get_dependencies() {
+	if is_dynamic_executable $1; then
+		lddresult=`ldd $1`
+		if [ $? -eq 0 ]; then
+			deps=$(gawk 'match ($0, /(\/.*\.so(\.[0-9]+)?)/, ary) {
+						path=ary[1]
+						printf "%s\n", path}' <<-EOF
+				$lddresult
+			EOF
+				)
+		else
+			echo "ldd failed"; exit 1;
+		fi
+	else
+		return 0
+	fi
+}
+
+[ $# -eq 1 ] || { usage;  exit 1; }
+
+rootname="rootfs"
+parentimage="ubuntu"
+deps=""
+
+get_dependencies $1;
+
+for dep in $deps $1; do
+	dir=`dirname $dep | cut -d/ -f2-`
+	destdir="${rootname}/${dir}"
+	destdep=$destdir/`basename $dep`
+	mkdir -p $destdir
+	if [ -e "./"$destdep ]; then
+		echo "dependency exists; skipping $destdep"
+	else
+		echo "doing copy of $destdep";
+		cp $dep $destdir/;
+	fi
+done
